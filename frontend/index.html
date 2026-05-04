@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Song Chatbot 🎵</title>
+<title>AI Song Chatbot 🎵</title>
 
 <style>
 body {
     margin: 0;
-    font-family: "Segoe UI", Arial;
-    background: #0b1220;
+    font-family: Arial;
+    background: #0f172a;
     color: white;
     display: flex;
     justify-content: center;
@@ -22,64 +22,42 @@ body {
 }
 
 #authBox input {
-    padding: 12px;
+    padding: 10px;
     margin: 6px;
-    width: 240px;
-    border-radius: 8px;
+    width: 220px;
+    border-radius: 6px;
     border: none;
-    outline: none;
-    background: #111827;
-    color: white;
-}
-
-#authBox button {
-    margin: 5px;
-    padding: 10px 14px;
-    background: #22c55e;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
 }
 
 /* CHAT */
 .chat-container {
     width: 100%;
-    max-width: 900px;
+    max-width: 850px;
     height: 100vh;
     display: none;
     flex-direction: column;
-    background: #0f172a;
 }
 
-/* HEADER */
 .header {
-    padding: 16px;
+    padding: 15px;
     background: #111827;
     text-align: center;
-    font-size: 18px;
     font-weight: bold;
-    border-bottom: 1px solid #1f2937;
 }
 
-/* CHAT BOX */
 .chat-box {
     flex: 1;
-    padding: 15px;
+    padding: 10px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
 
-/* MESSAGE */
 .msg {
     margin: 8px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    max-width: 75%;
-    font-size: 14px;
-    line-height: 1.4;
-    word-wrap: break-word;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
 }
 
 .user {
@@ -92,36 +70,28 @@ body {
     align-self: flex-start;
 }
 
-/* INPUT */
 .input-area {
     display: flex;
-    padding: 12px;
+    padding: 10px;
     background: #111827;
-    border-top: 1px solid #1f2937;
 }
 
 input {
     flex: 1;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 10px;
+    border-radius: 6px;
     border: none;
     outline: none;
-    background: #0b1220;
-    color: white;
 }
 
 button {
-    margin-left: 8px;
-    padding: 12px 16px;
+    margin-left: 6px;
+    padding: 10px;
     background: #22c55e;
     border: none;
     color: white;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-}
-
-button:hover {
-    background: #16a34a;
 }
 </style>
 </head>
@@ -130,33 +100,31 @@ button:hover {
 
 <!-- LOGIN -->
 <div id="authBox">
-    <h2>Login / Signup</h2>
-
+    <h2>Login</h2>
     <input id="email" placeholder="Email"><br>
     <input id="password" type="password" placeholder="Password"><br>
 
-    <button onclick="signup()">Signup</button>
     <button onclick="login()">Login</button>
-    <button onclick="googleLogin()">Google Login</button>
 </div>
 
 <!-- CHAT -->
 <div class="chat-container">
+
     <div class="header">🎵 AI Song Chatbot</div>
+
     <div id="chat" class="chat-box"></div>
 
     <div class="input-area">
         <input id="input" placeholder="Type your mood..." />
         <button onclick="sendMessage()">Send</button>
     </div>
+
 </div>
 
 <script>
-const input = document.getElementById("input");
 const chat = document.getElementById("chat");
-const authBox = document.getElementById("authBox");
+const input = document.getElementById("input");
 
-/* MESSAGE UI */
 function addMessage(text, type) {
     const div = document.createElement("div");
     div.classList.add("msg", type);
@@ -165,7 +133,6 @@ function addMessage(text, type) {
     chat.scrollTop = chat.scrollHeight;
 }
 
-/* SEND MESSAGE (FIXED) */
 async function sendMessage() {
     const text = input.value.trim();
     if (!text) return;
@@ -174,110 +141,36 @@ async function sendMessage() {
     input.value = "";
 
     try {
-        const user = auth.currentUser;
-
         const res = await fetch("https://song-chatbot-backend.onrender.com/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: text,
-                user: user ? user.email : "guest"
-            })
+            body: JSON.stringify({ message: text, user: "guest" })
         });
 
         const data = await res.json();
 
-        console.log("API Response:", data);
-
-        if (!res.ok || !data.reply) {
-            addMessage("⚠️ Server error", "bot");
-            return;
-        }
-
         addMessage(data.reply, "bot");
 
-        if (data.songs && data.songs.length) {
-            addMessage("🎧 " + data.songs.join(", "), "bot");
+        if (data.formattedSongs) {
+            addMessage(data.formattedSongs, "bot");
         }
 
-        saveChat(user, text, data.reply, data.mood);
-
     } catch (err) {
-        console.error(err);
         addMessage("❌ Server not reachable", "bot");
     }
 }
 
-/* ENTER KEY */
 document.addEventListener("keydown", e => {
     if (e.key === "Enter" && document.activeElement.id === "input") {
         sendMessage();
     }
 });
-</script>
 
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDbtvDAa4D7CENw8fe7T3jvZNy9nDsplPw",
-  authDomain: "song-chatbot.firebaseapp.com",
-  projectId: "song-chatbot",
-  storageBucket: "song-chatbot.appspot.com",
-  messagingSenderId: "573261352496",
-  appId: "1:573261352496:web:33b9edba7b2b86dc3427f5"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.database();
-
-/* SAVE CHAT */
-function saveChat(user, message, reply, mood) {
-    if (!user) return;
-
-    db.ref("chats/" + user.uid).push({
-        message,
-        reply,
-        mood: mood || "unknown",
-        time: Date.now()
-    });
+/* SIMPLE LOGIN (UI ONLY) */
+function login() {
+    document.getElementById("authBox").style.display = "none";
+    document.querySelector(".chat-container").style.display = "flex";
 }
-
-/* AUTH */
-window.signup = function () {
-    auth.createUserWithEmailAndPassword(email.value, password.value)
-        .then(() => alert("Signup success"))
-        .catch(e => alert(e.message));
-};
-
-window.login = function () {
-    auth.signInWithEmailAndPassword(email.value, password.value)
-        .then(() => alert("Login success"))
-        .catch(e => alert(e.message));
-};
-
-window.googleLogin = function () {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-        .then(() => alert("Google login success"))
-        .catch(e => alert(e.message));
-};
-
-/* AUTH STATE */
-auth.onAuthStateChanged(user => {
-    if (user) {
-        authBox.style.display = "none";
-        document.querySelector(".chat-container").style.display = "flex";
-    } else {
-        authBox.style.display = "block";
-        document.querySelector(".chat-container").style.display = "none";
-    }
-});
 </script>
 
 </body>

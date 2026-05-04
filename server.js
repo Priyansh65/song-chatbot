@@ -11,44 +11,38 @@ app.use(express.json());
    HEALTH CHECK
 ------------------------------*/
 app.get("/", (req, res) => {
-    res.send("✅ Node Backend Running Successfully");
+    res.send("✅ Song Chatbot Backend Running");
 });
 
 /* -----------------------------
-   CHAT API (MAIN)
+   CHAT API
 ------------------------------*/
 app.post("/chat", async (req, res) => {
     try {
-        const userMessage = (req.body.message || "").toLowerCase();
+        const message = (req.body.message || "").toLowerCase();
+        const user = req.body.user || "guest";
 
-        if (!userMessage) {
-            return res.status(400).json({
-                error: "Message is required"
-            });
+        if (!message) {
+            return res.status(400).json({ error: "Message required" });
         }
 
         // -----------------------------
         // SIMPLE MOOD DETECTION
         // -----------------------------
-        let mood = "neutral";
+        let mood = "chill";
 
-        if (userMessage.includes("happy") || userMessage.includes("good") || userMessage.includes("great")) {
+        if (message.includes("happy") || message.includes("good") || message.includes("great") || message.includes("excited")) {
             mood = "happy";
         } 
-        else if (userMessage.includes("sad") || userMessage.includes("lonely") || userMessage.includes("cry")) {
+        else if (message.includes("sad") || message.includes("lonely") || message.includes("cry")) {
             mood = "sad";
         } 
-        else if (userMessage.includes("angry") || userMessage.includes("mad")) {
+        else if (message.includes("angry") || message.includes("mad")) {
             mood = "angry";
         } 
-        else if (userMessage.includes("love") || userMessage.includes("romantic")) {
+        else if (message.includes("love") || message.includes("romantic")) {
             mood = "romantic";
-        } 
-        else {
-            mood = "chill";
         }
-
-        console.log("Detected mood:", mood);
 
         // -----------------------------
         // CALL PYTHON API
@@ -59,21 +53,24 @@ app.post("/chat", async (req, res) => {
             { timeout: 5000 }
         );
 
-        const songs = response?.data?.songs || [];
+        const songs = response.data.songs || [];
 
         return res.json({
-            reply: `Here are some ${mood} songs 🎵`,
-            mood: mood,
-            songs: songs
+            user,
+            mood,
+            reply: `I detected you're feeling ${mood} 😊`,
+            songs,
+            formattedSongs: "🎧 " + songs.join(" | ")
         });
 
     } catch (error) {
-        console.error("Backend Error:", error.message);
+        console.error("Error:", error.message);
 
-        return res.status(500).json({
-            reply: "Sorry, I'm having trouble fetching songs right now 😢",
-            songs: ["Blinding Lights", "Shape of You", "Perfect"],
-            mood: "fallback"
+        return res.json({
+            mood: "chill",
+            reply: "I'm having trouble right now, showing fallback songs 🎵",
+            songs: ["Blinding Lights", "Shape of You", "Stay"],
+            formattedSongs: "🎧 Blinding Lights | Shape of You | Stay"
         });
     }
 });
@@ -84,5 +81,5 @@ app.post("/chat", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`✅ Backend running on port ${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
 });
