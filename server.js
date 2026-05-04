@@ -3,36 +3,86 @@ const axios = require("axios");
 const cors = require("cors");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
+/* -----------------------------
+   HEALTH CHECK
+------------------------------*/
+app.get("/", (req, res) => {
+    res.send("✅ Node Backend Running Successfully");
+});
+
+/* -----------------------------
+   CHAT API (MAIN)
+------------------------------*/
 app.post("/chat", async (req, res) => {
-    const userMessage = req.body.message.toLowerCase();
-
-    let mood = "neutral";
-    if (userMessage.includes("happy")) mood = "happy";
-    else if (userMessage.includes("sad")) mood = "sad";
-    else if (userMessage.includes("angry")) mood = "angry";
-    else if (userMessage.includes("love")) mood = "romantic";
-
     try {
-        const response = await axios.post("https://song-chatbot-api.onrender.com/recommend", {
-            mood: mood
-        });
+        const userMessage = (req.body.message || "").toLowerCase();
 
-        res.json({
+        if (!userMessage) {
+            return res.status(400).json({
+                error: "Message is required"
+            });
+        }
+
+        // -----------------------------
+        // SIMPLE MOOD DETECTION
+        // -----------------------------
+        let mood = "neutral";
+
+        if (userMessage.includes("happy") || userMessage.includes("good") || userMessage.includes("great")) {
+            mood = "happy";
+        } 
+        else if (userMessage.includes("sad") || userMessage.includes("lonely") || userMessage.includes("cry")) {
+            mood = "sad";
+        } 
+        else if (userMessage.includes("angry") || userMessage.includes("mad")) {
+            mood = "angry";
+        } 
+        else if (userMessage.includes("love") || userMessage.includes("romantic")) {
+            mood = "romantic";
+        } 
+        else {
+            mood = "chill";
+        }
+
+        console.log("Detected mood:", mood);
+
+        // -----------------------------
+        // CALL PYTHON API
+        // -----------------------------
+        const response = await axios.post(
+            "https://song-chatbot-api.onrender.com/recommend",
+            { mood: mood },
+            { timeout: 5000 }
+        );
+
+        const songs = response?.data?.songs || [];
+
+        return res.json({
             reply: `Here are some ${mood} songs 🎵`,
-            songs: response.data.songs
+            mood: mood,
+            songs: songs
         });
 
     } catch (error) {
-        res.status(500).json({ error: "Error connecting to Python API" });
+        console.error("Backend Error:", error.message);
+
+        return res.status(500).json({
+            reply: "Sorry, I'm having trouble fetching songs right now 😢",
+            songs: ["Blinding Lights", "Shape of You", "Perfect"],
+            mood: "fallback"
+        });
     }
 });
-app.get("/", (req, res) => {
-    res.send("✅ Backend is running");
-});
 
-app.listen(3000, () => {
-    console.log("✅ Backend running at http://localhost:3000");
+/* -----------------------------
+   START SERVER
+------------------------------*/
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`✅ Backend running on port ${PORT}`);
 });
