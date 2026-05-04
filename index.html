@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Song Chatbot 🎵</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #121212;
+            color: white;
+            text-align: center;
+        }
+        #chatbox {
+            width: 60%;
+            margin: auto;
+            margin-top: 50px;
+        }
+        input {
+            padding: 10px;
+            width: 70%;
+        }
+        button {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .msg {
+            margin: 10px;
+        }
+        .bot {
+            color: lightgreen;
+        }
+        .user {
+            color: lightblue;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🎵 Song Recommendation Chatbot</h1>
+
+<div id="chatbox"></div>
+
+<input id="msg" placeholder="How are you feeling?" />
+<button onclick="send()">Send</button>
+
+<script>
+async function send() {
+    const input = document.getElementById("msg");
+    const message = input.value;
+
+    document.getElementById("chatbox").innerHTML += 
+        `<div class="msg user">You: ${message}</div>`;
+
+    const res = await fetch("http://localhost:3000/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message})
+    });
+
+    const data = await res.json();
+
+    document.getElementById("chatbox").innerHTML += 
+        `<div class="msg bot">${data.reply}</div>
+         <div class="msg bot">${data.songs.join(", ")}</div>`;
+
+    input.value = "";
+}
+</script>
+
+</body>
+</html>
