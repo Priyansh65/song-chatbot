@@ -29,6 +29,9 @@ app.post("/chat", async (req, res) => {
         res.status(500).json({ error: "Error connecting to Python API" });
     }
 });
+app.get("/", (req, res) => {
+    res.send("✅ Backend is running");
+});
 
 app.listen(3000, () => {
     console.log("✅ Backend running at http://localhost:3000");
