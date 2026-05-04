@@ -16,7 +16,7 @@ app.post("/chat", async (req, res) => {
     else if (userMessage.includes("love")) mood = "romantic";
 
     try {
-        const response = await axios.post("http://127.0.0.1:5000/recommend", {
+        const response = await axios.post("https://song-chatbot-api.onrender.com/recommend", {
             mood: mood
         });
 
